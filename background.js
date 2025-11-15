@@ -24,15 +24,28 @@ chrome.runtime.onInstalled.addListener((details) => {
         highlightEmails: true
       }
     });
-
-    // Open welcome page
-    chrome.tabs.create({
-      url: 'https://github.com/yourusername/lead-generator-pro'
-    });
   }
 
   if (details.reason === 'update') {
     console.log('Lead Generator Pro updated!');
+  }
+
+  // Create context menu items (on install and update)
+  try {
+    chrome.contextMenus.create({
+      id: 'extractEmail',
+      title: 'Extract Email from Selection',
+      contexts: ['selection']
+    });
+
+    chrome.contextMenus.create({
+      id: 'openSidebar',
+      title: 'Open Lead Generator',
+      contexts: ['page']
+    });
+  } catch (error) {
+    // Context menus may already exist, ignore error
+    console.log('Context menus already exist or error creating them');
   }
 });
 
@@ -503,27 +516,6 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
 
 // Initial badge update
 updateBadge();
-
-// Handle extension icon click
-chrome.action.onClicked.addListener(async (tab) => {
-  // Open popup (default behavior, but we can add custom logic here)
-  console.log('Extension icon clicked on tab:', tab.id);
-});
-
-// Context menu items (right-click menu)
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
-    id: 'extractEmail',
-    title: 'Extract Email from Selection',
-    contexts: ['selection']
-  });
-
-  chrome.contextMenus.create({
-    id: 'openSidebar',
-    title: 'Open Lead Generator',
-    contexts: ['page']
-  });
-});
 
 // Handle context menu clicks
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
