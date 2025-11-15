@@ -43,13 +43,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
  * Initialize on page load
  */
 function initialize() {
+  console.log('🎯 Lead Generator Pro - Content script loaded on:', window.location.href);
+
   // Create sidebar toggle button
   createToggleButton();
+  console.log('✓ Floating button created');
 
   // Auto-extract on LinkedIn profiles
   if (window.location.hostname.includes('linkedin.com') &&
       (window.location.pathname.startsWith('/in/') ||
        window.location.pathname.startsWith('/company/'))) {
+    console.log('LinkedIn profile detected - auto-extracting in 2 seconds...');
     // Auto-extract after a short delay to let page load
     setTimeout(() => {
       extractPageData();
@@ -291,6 +295,16 @@ async function extractPageData() {
 
   // Store current lead data
   currentLeadData = data;
+
+  // Log extraction results
+  console.log('📊 Lead extraction complete:', {
+    emails: data.emails.length,
+    phones: data.phones.length,
+    name: data.name,
+    company: data.company,
+    socialLinks: Object.keys(data.socialLinks).length
+  });
+  console.log('Full data:', data);
 
   // Highlight emails on page
   highlightEmails();
