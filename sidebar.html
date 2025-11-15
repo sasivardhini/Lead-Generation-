@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lead Generator Pro</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+      font-size: 14px;
+      color: #2c3e50;
+      background: #ffffff;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .header-subtitle {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .close-btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
+
+    .sidebar-content {
+      padding: 20px;
+    }
+
+    .section {
+      margin-bottom: 25px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      border: 1px solid #e9ecef;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #495057;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-icon {
+      font-size: 16px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #dee2e6;
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      font-weight: 500;
+      color: #6c757d;
+      font-size: 13px;
+    }
+
+    .info-value {
+      color: #212529;
+      font-size: 13px;
+      text-align: right;
+      max-width: 60%;
+      word-break: break-word;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+      margin: 2px;
+    }
+
+    .badge-success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .badge-info {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+
+    .badge-warning {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .social-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .social-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      background: white;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      text-decoration: none;
+      color: #495057;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .social-link:hover {
+      background: #f8f9fa;
+      border-color: #adb5bd;
+      transform: translateY(-1px);
+    }
+
+    .email-list, .phone-list {
+      list-style: none;
+    }
+
+    .email-item, .phone-item {
+      padding: 8px;
+      background: white;
+      margin: 5px 0;
+      border-radius: 6px;
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid #e9ecef;
+    }
+
+    .copy-btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: #5568d3;
+    }
+
+    .action-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+
+    .btn-success {
+      background: #28a745;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #218838;
+    }
+
+    .btn-outline {
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+
+    .btn-outline:hover {
+      background: #667eea;
+      color: white;
+    }
+
+    .loading-spinner {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 30px 20px;
+      color: #6c757d;
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+      opacity: 0.3;
+    }
+
+    .empty-state-text {
+      font-size: 14px;
+    }
+
+    .enrichment-section {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+    }
+
+    .enrichment-title {
+      font-weight: 600;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .enrichment-text {
+      font-size: 12px;
+      opacity: 0.9;
+      margin-bottom: 12px;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+
+    .status-verified {
+      background: #28a745;
+    }
+
+    .status-unverified {
+      background: #ffc107;
+    }
+
+    .status-invalid {
+      background: #dc3545;
+    }
+
+    .score-bar {
+      height: 6px;
+      background: #e9ecef;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .score-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #28a745 0%, #ffc107 50%, #dc3545 100%);
+      transition: width 0.3s;
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid #e9ecef;
+      margin-bottom: 15px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: #6c757d;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      color: #667eea;
+      border-bottom: 2px solid #667eea;
+      margin-bottom: -2px;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar-header">
+    <button class="close-btn" id="closeSidebar">×</button>
+    <div class="header-title">🎯 Lead Generator Pro</div>
+    <div class="header-subtitle" id="pageUrl">Extracting from current page...</div>
+  </div>
+
+  <div class="sidebar-content">
+    <div class="loading-spinner" id="loadingSpinner">
+      <div class="spinner"></div>
+      <p style="margin-top: 10px; color: #6c757d;">Extracting lead data...</p>
+    </div>
+
+    <div id="mainContent" style="display: none;">
+      <!-- Lead Summary -->
+      <div class="section">
+        <div class="section-title">
+          <span class="section-icon">👤</span>
+          Contact Information
+        </div>
+        <div class="info-row">
+          <span class="info-label">Name</span>
+          <span class="info-value" id="contactName">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Company</span>
+          <span class="info-value" id="contactCompany">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Title</span>
+          <span class="info-value" id="contactTitle">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Location</span>
+          <span class="info-value" id="contactLocation">-</span>
+        </div>
+      </div>
+
+      <!-- Emails Section -->
+      <div class="section">
+        <div class="section-title">
+          <span class="section-icon">📧</span>
+          Email Addresses
+          <span class="badge badge-info" id="emailCount">0</span>
+        </div>
+        <ul class="email-list" id="emailList">
+          <li class="empty-state">
+            <div class="empty-state-text">No emails found</div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Phone Numbers Section -->
+      <div class="section">
+        <div class="section-title">
+          <span class="section-icon">📱</span>
+          Phone Numbers
+          <span class="badge badge-info" id="phoneCount">0</span>
+        </div>
+        <ul class="phone-list" id="phoneList">
+          <li class="empty-state">
+            <div class="empty-state-text">No phone numbers found</div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Social Links Section -->
+      <div class="section">
+        <div class="section-title">
+          <span class="section-icon">🔗</span>
+          Social Profiles
+        </div>
+        <div class="social-links" id="socialLinks">
+          <div class="empty-state-text">No social profiles found</div>
+        </div>
+      </div>
+
+      <!-- AI Enrichment Placeholder -->
+      <div class="enrichment-section">
+        <div class="enrichment-title">
+          ✨ AI Enrichment Available
+        </div>
+        <div class="enrichment-text">
+          Enhance this lead with job title verification, company insights, and predicted email patterns.
+        </div>
+        <button class="btn btn-outline" style="width: 100%;" id="enrichBtn">
+          Enrich Lead Data
+        </button>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button class="btn btn-primary" id="saveLocalBtn">
+          💾 Save Local
+        </button>
+        <button class="btn btn-success" id="saveApiBtn">
+          ☁️ Save to API
+        </button>
+        <button class="btn btn-secondary" id="exportCsvBtn">
+          📊 Export CSV
+        </button>
+        <button class="btn btn-secondary" id="exportSheetsBtn">
+          📑 Google Sheets
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // This script will be populated by the content script
+    // It handles sidebar interactions and data display
+  </script>
+</body>
+</html>

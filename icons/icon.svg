@@ -1,0 +1,30 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Main circle background -->
+  <circle cx="64" cy="64" r="60" fill="url(#grad1)"/>
+
+  <!-- Target/Crosshair icon representing lead targeting -->
+  <circle cx="64" cy="64" r="45" fill="none" stroke="white" stroke-width="3"/>
+  <circle cx="64" cy="64" r="30" fill="none" stroke="white" stroke-width="3"/>
+  <circle cx="64" cy="64" r="15" fill="none" stroke="white" stroke-width="3"/>
+  <circle cx="64" cy="64" r="6" fill="white"/>
+
+  <!-- Crosshair lines -->
+  <line x1="64" y1="4" x2="64" y2="28" stroke="white" stroke-width="3"/>
+  <line x1="64" y1="100" x2="64" y2="124" stroke="white" stroke-width="3"/>
+  <line x1="4" y1="64" x2="28" y2="64" stroke="white" stroke-width="3"/>
+  <line x1="100" y1="64" x2="124" y2="64" stroke="white" stroke-width="3"/>
+
+  <!-- Small accent dots -->
+  <circle cx="64" cy="19" r="2" fill="white"/>
+  <circle cx="64" cy="109" r="2" fill="white"/>
+  <circle cx="19" cy="64" r="2" fill="white"/>
+  <circle cx="109" cy="64" r="2" fill="white"/>
+</svg>

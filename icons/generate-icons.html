@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Icon Generator - Lead Generator Pro</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    .icon-preview {
+      margin: 20px 0;
+      padding: 20px;
+      background: #f5f5f5;
+      border-radius: 8px;
+    }
+    canvas {
+      margin: 10px;
+      border: 1px solid #ddd;
+    }
+    button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 5px;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #5568d3;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎯 Lead Generator Pro - Icon Generator</h1>
+  <p>This page generates the required PNG icons for the Chrome extension from the SVG source.</p>
+
+  <div class="icon-preview">
+    <h2>Icon Previews</h2>
+    <div>
+      <canvas id="canvas16" width="16" height="16"></canvas>
+      <canvas id="canvas48" width="48" height="48"></canvas>
+      <canvas id="canvas128" width="128" height="128"></canvas>
+    </div>
+  </div>
+
+  <div>
+    <button onclick="generateIcons()">Generate All Icons</button>
+    <button onclick="downloadIcon(16)">Download 16x16</button>
+    <button onclick="downloadIcon(48)">Download 48x48</button>
+    <button onclick="downloadIcon(128)">Download 128x128</button>
+  </div>
+
+  <div style="margin-top: 30px; padding: 15px; background: #fff3cd; border-radius: 6px;">
+    <strong>Instructions:</strong>
+    <ol>
+      <li>Click "Generate All Icons" to create the icons</li>
+      <li>Click each download button to save the PNG files</li>
+      <li>Save them as icon16.png, icon48.png, and icon128.png in the icons/ directory</li>
+      <li>Replace the existing icon files</li>
+    </ol>
+  </div>
+
+  <script>
+    function drawIcon(canvas, size) {
+      const ctx = canvas.getContext('2d');
+      const centerX = size / 2;
+      const centerY = size / 2;
+
+      // Create gradient background
+      const gradient = ctx.createLinearGradient(0, 0, size, size);
+      gradient.addColorStop(0, '#667eea');
+      gradient.addColorStop(1, '#764ba2');
+
+      // Draw background circle
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, size * 0.47, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Draw target circles
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = size * 0.023;
+
+      // Outer circle
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, size * 0.35, 0, 2 * Math.PI);
+      ctx.stroke();
+
+      // Middle circle
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, size * 0.23, 0, 2 * Math.PI);
+      ctx.stroke();
+
+      // Inner circle
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, size * 0.12, 0, 2 * Math.PI);
+      ctx.stroke();
+
+      // Center dot
+      ctx.fillStyle = 'white';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, size * 0.047, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Draw crosshair lines
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = size * 0.023;
+
+      // Vertical top
+      ctx.beginPath();
+      ctx.moveTo(centerX, size * 0.03);
+      ctx.lineTo(centerX, size * 0.22);
+      ctx.stroke();
+
+      // Vertical bottom
+      ctx.beginPath();
+      ctx.moveTo(centerX, size * 0.78);
+      ctx.lineTo(centerX, size * 0.97);
+      ctx.stroke();
+
+      // Horizontal left
+      ctx.beginPath();
+      ctx.moveTo(size * 0.03, centerY);
+      ctx.lineTo(size * 0.22, centerY);
+      ctx.stroke();
+
+      // Horizontal right
+      ctx.beginPath();
+      ctx.moveTo(size * 0.78, centerY);
+      ctx.lineTo(size * 0.97, centerY);
+      ctx.stroke();
+    }
+
+    function generateIcons() {
+      drawIcon(document.getElementById('canvas16'), 16);
+      drawIcon(document.getElementById('canvas48'), 48);
+      drawIcon(document.getElementById('canvas128'), 128);
+      alert('Icons generated! Now click the download buttons to save them.');
+    }
+
+    function downloadIcon(size) {
+      const canvas = document.getElementById(`canvas${size}`);
+      const link = document.createElement('a');
+      link.download = `icon${size}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+    }
+
+    // Generate icons on page load
+    window.onload = generateIcons;
+  </script>
+</body>
+</html>
