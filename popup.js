@@ -129,10 +129,31 @@ async function extractLeads() {
       throw new Error('No active tab found');
     }
 
+    // Check if page is restricted
+    if (isRestrictedPage(tab.url)) {
+      throw new Error('Cannot extract from this page. Extension doesn\'t work on Chrome system pages.');
+    }
+
+    // Try to inject content script if not already loaded
+    try {
+      await ensureContentScriptLoaded(tab.id);
+    } catch (injectError) {
+      console.warn('Could not inject content script:', injectError);
+    }
+
     // Send message to content script to extract leads
-    const response = await chrome.tabs.sendMessage(tab.id, {
-      action: 'extractLeads'
-    });
+    let response;
+    try {
+      response = await chrome.tabs.sendMessage(tab.id, {
+        action: 'extractLeads'
+      });
+    } catch (msgError) {
+      // Content script not loaded - ask user to refresh
+      if (msgError.message.includes('Receiving end does not exist')) {
+        throw new Error('Please refresh this page and try again. (Press F5 or Ctrl+R)');
+      }
+      throw msgError;
+    }
 
     if (response && response.success) {
       // Reload stats and recent leads
@@ -158,6 +179,44 @@ async function extractLeads() {
 }
 
 /**
+ * Check if page is restricted (cannot run content scripts)
+ */
+function isRestrictedPage(url) {
+  if (!url) return true;
+
+  const restrictedProtocols = [
+    'chrome://',
+    'chrome-extension://',
+    'edge://',
+    'about:',
+    'view-source:',
+    'file://'
+  ];
+
+  return restrictedProtocols.some(protocol => url.startsWith(protocol));
+}
+
+/**
+ * Ensure content script is loaded on the page
+ */
+async function ensureContentScriptLoaded(tabId) {
+  try {
+    // Try to ping the content script
+    await chrome.tabs.sendMessage(tabId, { action: 'ping' });
+  } catch (error) {
+    // Content script not loaded, try to inject it
+    console.log('Injecting content script...');
+    await chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      files: ['content.js']
+    });
+
+    // Wait a bit for script to initialize
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+}
+
+/**
  * Open sidebar on current page
  */
 async function openSidebar() {
@@ -168,16 +227,35 @@ async function openSidebar() {
       throw new Error('No active tab found');
     }
 
-    // Send message to content script to toggle sidebar
-    await chrome.tabs.sendMessage(tab.id, {
-      action: 'toggleSidebar'
-    });
+    // Check if page is restricted
+    if (isRestrictedPage(tab.url)) {
+      throw new Error('Cannot open sidebar on this page');
+    }
 
-    // Close popup
-    window.close();
+    // Ensure content script is loaded
+    try {
+      await ensureContentScriptLoaded(tab.id);
+    } catch (injectError) {
+      console.warn('Could not inject content script:', injectError);
+    }
+
+    // Send message to content script to toggle sidebar
+    try {
+      await chrome.tabs.sendMessage(tab.id, {
+        action: 'toggleSidebar'
+      });
+
+      // Close popup
+      window.close();
+    } catch (msgError) {
+      if (msgError.message.includes('Receiving end does not exist')) {
+        throw new Error('Please refresh this page first');
+      }
+      throw msgError;
+    }
   } catch (error) {
     console.error('Error opening sidebar:', error);
-    showNotification('Error', 'Failed to open sidebar', 'error');
+    showNotification('Error', error.message, 'error');
   }
 }
 

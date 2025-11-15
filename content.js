@@ -12,6 +12,12 @@ let currentLeadData = null;
 
 // Listen for messages from popup and background
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Ping-pong for connection check
+  if (request.action === 'ping') {
+    sendResponse({ success: true, pong: true });
+    return true;
+  }
+
   if (request.action === 'extractLeads') {
     extractPageData().then(data => {
       sendResponse({ success: true, data: data });
