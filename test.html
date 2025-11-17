@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Test page for Lead Generator Pro extension">
+    <title>Lead Generator Pro - Test Page</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .contact-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+        .contact-info {
+            margin: 10px 0;
+        }
+        .label {
+            font-weight: 600;
+            color: #495057;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+        }
+        .instructions {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+        code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Lead Generator Pro - Test Page</h1>
+
+    <div class="instructions">
+        <h3>📋 How to Test:</h3>
+        <ol>
+            <li>Make sure the extension is installed and enabled</li>
+            <li>Click the extension icon in your toolbar</li>
+            <li>Click <strong>"Extract Leads from Page"</strong></li>
+            <li>You should see a success notification!</li>
+            <li>The sidebar should open showing the extracted data below</li>
+        </ol>
+    </div>
+
+    <div class="contact-section">
+        <h2>Sample Contact Information</h2>
+
+        <div class="contact-info">
+            <span class="label">Name:</span> John Smith
+        </div>
+
+        <div class="contact-info">
+            <span class="label">Company:</span> Acme Corporation
+        </div>
+
+        <div class="contact-info">
+            <span class="label">Title:</span> Senior Software Engineer
+        </div>
+
+        <div class="contact-info">
+            <span class="label">Email:</span> john.smith@acme-corp.com
+        </div>
+
+        <div class="contact-info">
+            <span class="label">Secondary Email:</span> jsmith@acme-corp.com
+        </div>
+
+        <div class="contact-info">
+            <span class="label">Phone:</span> (555) 123-4567
+        </div>
+
+        <div class="contact-info">
+            <span class="label">Mobile:</span> +1-555-987-6543
+        </div>
+
+        <div class="contact-info">
+            <span class="label">LinkedIn:</span> https://linkedin.com/in/johnsmith
+        </div>
+
+        <div class="contact-info">
+            <span class="label">Twitter:</span> https://twitter.com/johnsmith
+        </div>
+
+        <div class="contact-info">
+            <span class="label">GitHub:</span> https://github.com/johnsmith
+        </div>
+    </div>
+
+    <div class="contact-section">
+        <h2>Additional Contacts</h2>
+
+        <div class="contact-info">
+            For sales inquiries: sales@acme-corp.com
+        </div>
+
+        <div class="contact-info">
+            Customer support: support@acme-corp.com | Phone: (555) 999-0000
+        </div>
+
+        <div class="contact-info">
+            Marketing team: marketing@acme-corp.com
+        </div>
+    </div>
+
+    <div class="success">
+        <h3>✅ What Should Happen:</h3>
+        <p><strong>The extension should extract:</strong></p>
+        <ul>
+            <li>✓ 5 email addresses (john.smith@acme-corp.com, jsmith@acme-corp.com, sales@, support@, marketing@)</li>
+            <li>✓ 2 phone numbers ((555) 123-4567, +1-555-987-6543, (555) 999-0000)</li>
+            <li>✓ 3 social profiles (LinkedIn, Twitter, GitHub)</li>
+            <li>✓ Name: John Smith</li>
+            <li>✓ Company: Acme Corporation</li>
+        </ul>
+
+        <p style="margin-top: 15px;">
+            <strong>Check the console (F12):</strong> You should see messages like:<br>
+            <code>🎯 Lead Generator Pro - Content script loaded</code><br>
+            <code>📊 Lead extraction complete: { emails: 5, phones: 3, ... }</code>
+        </p>
+    </div>
+
+    <div class="instructions">
+        <h3>🐛 Troubleshooting:</h3>
+        <ul>
+            <li><strong>Not working?</strong> Press <code>F5</code> to refresh this page!</li>
+            <li><strong>No floating button?</strong> Reload the extension in chrome://extensions/</li>
+            <li><strong>No extraction?</strong> Check console (F12) for error messages</li>
+            <li><strong>Still broken?</strong> See START-HERE.md for detailed help</li>
+        </ul>
+    </div>
+
+    <hr style="margin: 40px 0;">
+
+    <h2>About This Test Page</h2>
+    <p>
+        This page contains structured contact information to test the Lead Generator Pro
+        extension. It includes emails, phone numbers, social media links, and company
+        information that should all be automatically detected and extracted.
+    </p>
+
+    <p>
+        <strong>Company:</strong> Acme Corporation<br>
+        <strong>Website:</strong> www.acme-corp.com<br>
+        <strong>Location:</strong> San Francisco, CA<br>
+        <strong>Founded:</strong> 2020
+    </p>
+
+    <p>
+        You can also reach us at: info@acme-corp.com or call our main office at (555) 100-2000.
+    </p>
+
+    <script>
+        // Log when page loads to help with debugging
+        console.log('✓ Test page loaded successfully');
+        console.log('📄 Page URL:', window.location.href);
+        console.log('⏰ Loaded at:', new Date().toISOString());
+
+        // Check if extension is present after a short delay
+        setTimeout(() => {
+            const floatingButton = document.getElementById('leadgen-sidebar-toggle');
+            if (floatingButton) {
+                console.log('✅ Extension floating button detected!');
+            } else {
+                console.warn('⚠️ Extension floating button NOT found. Extension may not be loaded.');
+                console.warn('💡 Try refreshing the page (F5) or reload the extension.');
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

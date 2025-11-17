@@ -203,16 +203,40 @@ async function ensureContentScriptLoaded(tabId) {
   try {
     // Try to ping the content script
     await chrome.tabs.sendMessage(tabId, { action: 'ping' });
+    console.log('✓ Content script already loaded');
   } catch (error) {
-    // Content script not loaded, try to inject it
-    console.log('Injecting content script...');
-    await chrome.scripting.executeScript({
-      target: { tabId: tabId },
-      files: ['content.js']
-    });
+    // Content script not loaded, inject it manually
+    console.log('⚠ Content script not loaded, injecting manually...');
 
-    // Wait a bit for script to initialize
-    await new Promise(resolve => setTimeout(resolve, 100));
+    try {
+      // Inject the content script
+      await chrome.scripting.executeScript({
+        target: { tabId: tabId },
+        files: ['content.js']
+      });
+      console.log('✓ Content script injected');
+
+      // Inject the CSS
+      await chrome.scripting.insertCSS({
+        target: { tabId: tabId },
+        files: ['sidebar.css']
+      });
+      console.log('✓ CSS injected');
+
+      // Wait for script to initialize
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Verify it loaded
+      try {
+        await chrome.tabs.sendMessage(tabId, { action: 'ping' });
+        console.log('✓ Injection verified - extension ready!');
+      } catch (verifyError) {
+        console.warn('⚠ Verification failed, but continuing...');
+      }
+    } catch (injectError) {
+      console.error('❌ Failed to inject:', injectError);
+      throw new Error('Could not load extension on this page. Please refresh (F5) and try again.');
+    }
   }
 }
 
