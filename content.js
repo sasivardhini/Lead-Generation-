@@ -9,6 +9,9 @@
 // Initialize global state
 let sidebarInjected = false;
 let currentLeadData = null;
+let extractor = null; // LinkedIn extractor instance
+let overlayWidget = null; // Overlay widget instance
+let floatingButton = null; // Floating action button
 
 // Listen for messages from popup and background
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -27,8 +30,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Keep channel open for async response
   }
 
+  if (request.action === 'extractBulk') {
+    extractBulkFromSearch().then(data => {
+      sendResponse({ success: true, data: data });
+    }).catch(error => {
+      sendResponse({ success: false, error: error.message });
+    });
+    return true;
+  }
+
   if (request.action === 'toggleSidebar') {
     toggleSidebar();
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (request.action === 'toggleOverlay') {
+    toggleOverlay();
     sendResponse({ success: true });
     return true;
   }
@@ -45,74 +63,353 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 function initialize() {
   console.log('🎯 Lead Generator Pro - Content script loaded on:', window.location.href);
 
-  // Create sidebar toggle button
-  createToggleButton();
+  // Initialize extractor and widget
+  if (typeof LinkedInExtractor !== 'undefined') {
+    extractor = new LinkedInExtractor();
+    console.log(`✓ Initialized LinkedIn extractor (Page type: ${extractor.pageType})`);
+  }
+
+  if (typeof OverlayWidget !== 'undefined') {
+    overlayWidget = new OverlayWidget();
+    console.log('✓ Initialized overlay widget');
+  }
+
+  // Create floating action button
+  createFloatingButton();
   console.log('✓ Floating button created');
 
-  // Auto-extract on LinkedIn profiles
-  if (window.location.hostname.includes('linkedin.com') &&
-      (window.location.pathname.startsWith('/in/') ||
-       window.location.pathname.startsWith('/company/'))) {
-    console.log('LinkedIn profile detected - auto-extracting in 2 seconds...');
-    // Auto-extract after a short delay to let page load
-    setTimeout(() => {
-      extractPageData();
-    }, 2000);
+  // Auto-extract on LinkedIn pages
+  if (window.location.hostname.includes('linkedin.com')) {
+    if (extractor && extractor.pageType === 'PROFILE') {
+      console.log('LinkedIn profile detected - auto-extracting in 2 seconds...');
+      setTimeout(() => {
+        autoExtractAndShow();
+      }, 2000);
+    } else if (extractor && extractor.pageType === 'SEARCH_PEOPLE') {
+      console.log('LinkedIn search page detected - ready for bulk extraction');
+      showBulkExtractionButton();
+    }
   }
 }
 
 /**
- * Create floating toggle button
+ * Auto-extract and show in overlay
  */
-function createToggleButton() {
+async function autoExtractAndShow() {
+  try {
+    const data = await extractPageData();
+    if (data && data.name) {
+      if (overlayWidget) {
+        overlayWidget.render(data);
+        overlayWidget.show();
+      }
+    }
+  } catch (error) {
+    console.error('Auto-extraction error:', error);
+  }
+}
+
+/**
+ * Create floating action button
+ */
+function createFloatingButton() {
   // Check if button already exists
-  if (document.getElementById('leadgen-sidebar-toggle')) {
+  if (document.getElementById('leadgen-floating-button')) {
     return;
   }
 
-  const toggleBtn = document.createElement('button');
-  toggleBtn.id = 'leadgen-sidebar-toggle';
-  toggleBtn.innerHTML = '🎯 LEADS';
-  toggleBtn.title = 'Open Lead Generator';
+  floatingButton = document.createElement('button');
+  floatingButton.id = 'leadgen-floating-button';
+  floatingButton.innerHTML = '🎯<br><span style="font-size: 10px;">LEADS</span>';
+  floatingButton.title = 'Open Lead Generator';
 
   // Add CSS
-  toggleBtn.style.cssText = `
+  floatingButton.style.cssText = `
     position: fixed;
-    top: 50%;
-    right: 0;
-    transform: translateY(-50%);
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
-    border-radius: 8px 0 0 8px;
-    padding: 15px 10px;
+    border-radius: 50%;
     cursor: pointer;
-    z-index: 2147483646;
-    font-size: 12px;
-    box-shadow: -2px 2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 999998;
+    font-size: 20px;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     transition: all 0.3s;
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
     font-weight: 600;
-    letter-spacing: 1px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.2;
+  `;
+
+  floatingButton.addEventListener('click', () => {
+    if (overlayWidget && currentLeadData) {
+      toggleOverlay();
+    } else {
+      // Extract and show
+      extractAndShowOverlay();
+    }
+  });
+
+  floatingButton.addEventListener('mouseenter', () => {
+    floatingButton.style.transform = 'scale(1.1)';
+    floatingButton.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.6)';
+  });
+
+  floatingButton.addEventListener('mouseleave', () => {
+    floatingButton.style.transform = 'scale(1)';
+    floatingButton.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+  });
+
+  document.body.appendChild(floatingButton);
+}
+
+/**
+ * Toggle overlay widget
+ */
+function toggleOverlay() {
+  if (overlayWidget) {
+    overlayWidget.toggle();
+  }
+}
+
+/**
+ * Extract and show overlay
+ */
+async function extractAndShowOverlay() {
+  try {
+    // Show loading state
+    if (floatingButton) {
+      floatingButton.innerHTML = '⏳';
+    }
+
+    const data = await extractPageData();
+
+    if (data && overlayWidget) {
+      overlayWidget.render(data);
+      overlayWidget.show();
+    }
+
+    // Restore button
+    if (floatingButton) {
+      floatingButton.innerHTML = '🎯<br><span style="font-size: 10px;">LEADS</span>';
+    }
+  } catch (error) {
+    console.error('Error extracting data:', error);
+    if (floatingButton) {
+      floatingButton.innerHTML = '❌';
+      setTimeout(() => {
+        floatingButton.innerHTML = '🎯<br><span style="font-size: 10px;">LEADS</span>';
+      }, 2000);
+    }
+  }
+}
+
+/**
+ * Show bulk extraction button on search pages
+ */
+function showBulkExtractionButton() {
+  // Check if already exists
+  if (document.getElementById('leadgen-bulk-extract-btn')) {
+    return;
+  }
+
+  const bulkButton = document.createElement('button');
+  bulkButton.id = 'leadgen-bulk-extract-btn';
+  bulkButton.innerHTML = '⚡ Extract All Leads';
+  bulkButton.style.cssText = `
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    z-index: 999998;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   `;
 
-  toggleBtn.addEventListener('click', () => {
-    toggleSidebar();
+  bulkButton.addEventListener('click', () => {
+    extractBulkFromSearch();
   });
 
-  toggleBtn.addEventListener('mouseenter', () => {
-    toggleBtn.style.paddingRight = '15px';
-    toggleBtn.style.boxShadow = '-4px 4px 15px rgba(102, 126, 234, 0.4)';
+  bulkButton.addEventListener('mouseenter', () => {
+    bulkButton.style.transform = 'translateY(-2px)';
+    bulkButton.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.6)';
   });
 
-  toggleBtn.addEventListener('mouseleave', () => {
-    toggleBtn.style.paddingRight = '10px';
-    toggleBtn.style.boxShadow = '-2px 2px 10px rgba(0, 0, 0, 0.2)';
+  bulkButton.addEventListener('mouseleave', () => {
+    bulkButton.style.transform = 'translateY(0)';
+    bulkButton.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
   });
 
-  document.body.appendChild(toggleBtn);
+  document.body.appendChild(bulkButton);
+}
+
+/**
+ * Extract bulk contacts from search page
+ */
+async function extractBulkFromSearch() {
+  if (!extractor) {
+    console.error('Extractor not initialized');
+    return [];
+  }
+
+  const bulkButton = document.getElementById('leadgen-bulk-extract-btn');
+
+  try {
+    // Show loading state
+    if (bulkButton) {
+      bulkButton.innerHTML = '⏳ Extracting...';
+      bulkButton.disabled = true;
+    }
+
+    const profiles = extractor.extractBulkFromSearch();
+
+    // Enrich with email patterns
+    for (const profile of profiles) {
+      if (profile.firstName && profile.company) {
+        profile.predictedEmails = generateEmailPatterns(
+          profile.name || `${profile.firstName} ${profile.lastName || ''}`,
+          profile.company,
+          extractCompanyDomain(profile.company, profile.profileUrl)
+        );
+      }
+    }
+
+    // Save all to storage
+    const result = await chrome.storage.local.get(['leads']);
+    const leads = result.leads || [];
+    leads.push(...profiles);
+    await chrome.storage.local.set({ leads: leads });
+
+    // Show success message
+    showBulkSuccessOverlay(profiles.length);
+
+    // Restore button
+    if (bulkButton) {
+      bulkButton.innerHTML = `✓ Extracted ${profiles.length} Leads`;
+      setTimeout(() => {
+        bulkButton.innerHTML = '⚡ Extract All Leads';
+        bulkButton.disabled = false;
+      }, 3000);
+    }
+
+    return profiles;
+  } catch (error) {
+    console.error('Bulk extraction error:', error);
+
+    if (bulkButton) {
+      bulkButton.innerHTML = '❌ Failed';
+      bulkButton.disabled = false;
+      setTimeout(() => {
+        bulkButton.innerHTML = '⚡ Extract All Leads';
+      }, 2000);
+    }
+
+    return [];
+  }
+}
+
+/**
+ * Show bulk extraction success overlay
+ */
+function showBulkSuccessOverlay(count) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 40px 60px;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    z-index: 1000000;
+    text-align: center;
+    animation: scaleIn 0.3s ease-out;
+  `;
+
+  overlay.innerHTML = `
+    <div style="font-size: 64px; margin-bottom: 20px;">✅</div>
+    <div style="font-size: 24px; font-weight: 700; color: #1c1e21; margin-bottom: 12px;">
+      Successfully Extracted!
+    </div>
+    <div style="font-size: 16px; color: #65676b; margin-bottom: 24px;">
+      ${count} LinkedIn profiles saved to your leads
+    </div>
+    <button id="leadgen-view-leads" style="
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 32px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+    ">
+      View Leads
+    </button>
+    <button id="leadgen-export-bulk" style="
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+      padding: 10px 32px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-left: 12px;
+      transition: transform 0.2s;
+    ">
+      Export CSV
+    </button>
+  `;
+
+  // Add animation
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes scaleIn {
+      from { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+      to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  document.body.appendChild(overlay);
+
+  // Remove after 5 seconds
+  setTimeout(() => {
+    overlay.remove();
+    style.remove();
+  }, 5000);
+
+  // Add click to close
+  overlay.addEventListener('click', (e) => {
+    if (e.target.id === 'leadgen-view-leads') {
+      chrome.runtime.sendMessage({ action: 'openPopup' });
+      overlay.remove();
+    } else if (e.target.id === 'leadgen-export-bulk') {
+      chrome.runtime.sendMessage({
+        action: 'exportAllLeads',
+        format: 'csv'
+      });
+      overlay.remove();
+    }
+  });
 }
 
 /**
@@ -240,30 +537,36 @@ function setupSidebarListeners() {
  * Extract all data from current page
  */
 async function extractPageData() {
-  const data = {
-    url: window.location.href,
-    domain: extractDomain(window.location.href),
-    timestamp: new Date().toISOString(),
-    name: null,
-    company: null,
-    title: null,
-    location: null,
-    emails: [],
-    phones: [],
-    socialLinks: {},
-    metaDescription: null
-  };
+  let data = {};
 
-  // Check if LinkedIn page
-  if (window.location.hostname.includes('linkedin.com')) {
-    if (window.location.pathname.startsWith('/in/')) {
-      // Extract LinkedIn profile data
-      const linkedinData = extractLinkedInProfile();
-      Object.assign(data, linkedinData);
-    } else if (window.location.pathname.startsWith('/company/')) {
+  // Use professional LinkedIn extractor if available
+  if (extractor && window.location.hostname.includes('linkedin.com')) {
+    if (extractor.pageType === 'PROFILE') {
+      data = extractor.extractProfile();
+    } else if (extractor.pageType === 'COMPANY') {
       const companyData = extractLinkedInCompany();
-      Object.assign(data, companyData);
+      data = {
+        ...companyData,
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        domain: extractDomain(window.location.href)
+      };
     }
+  } else {
+    // Fallback to generic extraction
+    data = {
+      url: window.location.href,
+      domain: extractDomain(window.location.href),
+      timestamp: new Date().toISOString(),
+      name: null,
+      company: null,
+      title: null,
+      location: null,
+      emails: [],
+      phones: [],
+      socialLinks: {},
+      metaDescription: null
+    };
   }
 
   // Extract general page data
