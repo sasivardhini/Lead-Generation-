@@ -9,7 +9,8 @@
     "storage",
     "tabs",
     "contextMenus",
-    "notifications"
+    "notifications",
+    "downloads"
   ],
   "host_permissions": [
     "https://*/*",
@@ -29,7 +30,11 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "js": [
+        "linkedin-extractor.js",
+        "overlay-widget.js",
+        "content.js"
+      ],
       "run_at": "document_idle"
     }
   ],
