@@ -12,13 +12,18 @@ A powerful, production-ready Chrome extension for lead generation and contact ex
 - **🎯 LinkedIn Integration**: Advanced LinkedIn profile and company page scraping
 
 ### Advanced Features
-- **🔮 Email Pattern Guesser**: Generate possible email combinations based on names and company domains
+- **🔮 AI-Powered Email Pattern Generation**: Automatically generates 9+ likely email patterns based on name and company (95% confidence)
+  - Patterns: first.last@, firstlast@, flast@, f.last@, first@, first_last@, first-last@, last.first@, lastf@
+  - Intelligent company domain extraction and guessing
+  - Confidence scoring for each predicted pattern
 - **✅ Email Verification**: Validate email addresses (format, domain, MX records, SMTP)
 - **💾 Multi-Format Export**: Export leads to CSV, JSON, or vCard format
 - **☁️ Cloud Storage**: Save leads to your backend API or Google Sheets
 - **📊 Beautiful Sidebar UI**: Slide-out panel with comprehensive lead information
 - **🎨 Visual Highlights**: Automatically highlight detected emails on the page
 - **📈 Statistics Dashboard**: Track total leads and daily extraction metrics
+- **🔄 Auto-Save**: Automatically saves extracted leads to local storage
+- **📱 Enhanced Phone Detection**: Multiple pattern recognition for international numbers
 
 ## 🏗️ Architecture
 

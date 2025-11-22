@@ -293,12 +293,27 @@ async function extractPageData() {
   const metaDesc = document.querySelector('meta[name="description"]');
   data.metaDescription = metaDesc ? metaDesc.getAttribute('content') : null;
 
+  // Generate predicted emails if we have name and company but no emails found
+  if (data.name && data.company && data.emails.length === 0) {
+    data.predictedEmails = generateEmailPatterns(data.name, data.company, data.domain);
+    console.log(`✨ Generated ${data.predictedEmails.length} predicted email patterns`);
+  }
+
+  // Extract company domain from URL or company name
+  if (data.company && !data.companyDomain) {
+    data.companyDomain = extractCompanyDomain(data.company, data.url);
+  }
+
   // Store current lead data
   currentLeadData = data;
+
+  // Save to local storage automatically
+  await saveLeadLocal();
 
   // Log extraction results
   console.log('📊 Lead extraction complete:', {
     emails: data.emails.length,
+    predictedEmails: data.predictedEmails ? data.predictedEmails.length : 0,
     phones: data.phones.length,
     name: data.name,
     company: data.company,
@@ -337,21 +352,44 @@ function extractEmails(text) {
  * Extract phone numbers from text
  */
 function extractPhones(text) {
-  const phoneRegex = /(\+?\d{1,4}[\s.-]?)?\(?\d{1,4}\)?[\s.-]?\d{1,4}[\s.-]?\d{1,9}/g;
   const phones = new Set();
-  const matches = text.match(phoneRegex);
 
-  if (matches) {
-    matches.forEach(phone => {
-      const cleaned = phone.replace(/[^\d+]/g, '');
-      // Must be at least 10 digits
-      if (cleaned.replace(/\+/g, '').length >= 10) {
-        phones.add(phone.trim());
-      }
-    });
-  }
+  // Multiple phone patterns
+  const patterns = [
+    // International format: +1 234 567 8900
+    /\+\d{1,3}\s?\d{1,4}\s?\d{1,4}\s?\d{1,4}/g,
+    // US format: (123) 456-7890
+    /\(\d{3}\)\s?\d{3}[-.]?\d{4}/g,
+    // US format: 123-456-7890
+    /\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/g,
+    // International with dashes: +1-234-567-8900
+    /\+\d{1,3}[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,4}/g,
+    // Simple format: 1234567890 (10+ digits)
+    /\b\d{10,15}\b/g
+  ];
 
-  return Array.from(phones);
+  patterns.forEach(pattern => {
+    const matches = text.match(pattern);
+    if (matches) {
+      matches.forEach(phone => {
+        const cleaned = phone.replace(/[^\d+]/g, '');
+        const digitCount = cleaned.replace(/\+/g, '').length;
+
+        // Must be 10-15 digits
+        if (digitCount >= 10 && digitCount <= 15) {
+          // Skip common false positives
+          const phoneStr = phone.trim();
+          if (!phoneStr.match(/^[0-9]{13,}$/) && // Skip very long number sequences
+              !phoneStr.match(/\d{4}-\d{2}-\d{2}/) && // Skip dates
+              !phoneStr.includes('000000')) { // Skip obvious fake numbers
+            phones.add(phoneStr);
+          }
+        }
+      });
+    }
+  });
+
+  return Array.from(phones).slice(0, 10); // Limit to 10 phones max
 }
 
 /**
@@ -498,50 +536,125 @@ function extractLinkedInProfile() {
     headline: null,
     location: null,
     company: null,
-    about: null
+    about: null,
+    linkedinUrl: window.location.href
   };
 
-  // Extract name
+  // Extract name - Try multiple selectors for robustness
   const nameSelectors = [
     'h1.text-heading-xlarge',
-    '.pv-text-details__left-panel h1'
+    '.pv-text-details__left-panel h1',
+    'h1[class*="top-card"]',
+    'div[class*="pv-top-card"] h1',
+    '.scaffold-layout__main h1',
+    'h1.inline'
   ];
 
   for (const selector of nameSelectors) {
     const element = document.querySelector(selector);
-    if (element) {
+    if (element && element.textContent.trim().length > 0 && element.textContent.trim().length < 100) {
       data.name = element.textContent.trim();
+      console.log(`✓ Found name with selector: ${selector}`);
       break;
     }
   }
 
-  // Extract headline
+  // Extract headline/title - Try multiple approaches
   const headlineSelectors = [
-    '.text-body-medium.break-words',
-    'div.text-body-medium'
+    'div.text-body-medium.break-words',
+    '.pv-text-details__left-panel .text-body-medium',
+    'div[class*="top-card"] .text-body-medium',
+    '.pv-top-card-profile-section__headline',
+    'div[data-generated-suggestion-target]',
+    '.scaffold-layout__main .text-body-medium'
   ];
 
   for (const selector of headlineSelectors) {
     const element = document.querySelector(selector);
-    if (element && element.textContent.length < 200) {
-      data.headline = element.textContent.trim();
-      data.title = data.headline;
-      break;
+    if (element && element.textContent.trim().length > 0 && element.textContent.trim().length < 300) {
+      const text = element.textContent.trim();
+      // Skip if it's the name we already found
+      if (text !== data.name) {
+        data.headline = text;
+        data.title = text;
+        console.log(`✓ Found headline with selector: ${selector}`);
+        break;
+      }
     }
   }
 
   // Extract location
-  const locationElement = document.querySelector('.text-body-small.inline.t-black--light.break-words');
-  if (locationElement) {
-    data.location = locationElement.textContent.trim();
+  const locationSelectors = [
+    '.text-body-small.inline.t-black--light.break-words',
+    'span.text-body-small.inline.t-black--light',
+    '.pv-text-details__left-panel .text-body-small',
+    'div[class*="top-card"] .text-body-small',
+    '.scaffold-layout__main .text-body-small'
+  ];
+
+  for (const selector of locationSelectors) {
+    const element = document.querySelector(selector);
+    if (element) {
+      const text = element.textContent.trim();
+      // Location usually contains a comma or country name
+      if (text.length > 2 && text.length < 100) {
+        data.location = text;
+        console.log(`✓ Found location: ${text}`);
+        break;
+      }
+    }
   }
 
-  // Extract about
-  const aboutElement = document.querySelector('#about ~ div .inline-show-more-text span[aria-hidden="true"]');
-  if (aboutElement) {
-    data.about = aboutElement.textContent.trim();
+  // Extract current company from experience section
+  const companySelectors = [
+    'div[id="experience"] + div li.artdeco-list__item:first-child span[aria-hidden="true"]',
+    '.experience-section .pv-entity__secondary-title',
+    '.pv-top-card--experience-list-item',
+    'div.pvs-list__paged-list-item:first-child span[aria-hidden="true"]'
+  ];
+
+  for (const selector of companySelectors) {
+    const elements = document.querySelectorAll(selector);
+    if (elements.length > 0) {
+      // Try to find company name in first experience entry
+      for (const el of Array.from(elements).slice(0, 3)) {
+        const text = el.textContent.trim();
+        if (text.length > 2 && text.length < 100 && !text.includes('·') && !text.includes('yr') && !text.includes('mo')) {
+          data.company = text;
+          console.log(`✓ Found company: ${text}`);
+          break;
+        }
+      }
+      if (data.company) break;
+    }
   }
 
+  // Extract about section
+  const aboutSelectors = [
+    '#about ~ div .inline-show-more-text span[aria-hidden="true"]',
+    'section.summary div.pv-shared-text-with-see-more span[aria-hidden="true"]',
+    '#about ~ * span[aria-hidden="true"]',
+    'div[id="about"] ~ div span[aria-hidden="true"]'
+  ];
+
+  for (const selector of aboutSelectors) {
+    const element = document.querySelector(selector);
+    if (element && element.textContent.trim().length > 10) {
+      data.about = element.textContent.trim();
+      console.log(`✓ Found about section (${data.about.length} chars)`);
+      break;
+    }
+  }
+
+  // Try to extract email from about or contact info
+  if (data.about) {
+    const emailsFromAbout = extractEmails(data.about);
+    if (emailsFromAbout.length > 0) {
+      console.log(`✓ Found ${emailsFromAbout.length} email(s) in about section`);
+    }
+  }
+
+  console.log('LinkedIn profile extraction complete:', data);
   return data;
 }
 
@@ -587,8 +700,8 @@ function updateSidebarContent(data) {
   updateElement('contactTitle', data.title || data.headline || '-');
   updateElement('contactLocation', data.location || '-');
 
-  // Update emails
-  updateEmailList(data.emails);
+  // Update emails (with predicted patterns if available)
+  updateEmailList(data.emails, data.predictedEmails);
 
   // Update phones
   updatePhoneList(data.phones);
@@ -610,26 +723,50 @@ function updateElement(id, text) {
 /**
  * Update email list
  */
-function updateEmailList(emails) {
+function updateEmailList(emails, predictedEmails) {
   const emailList = document.getElementById('emailList');
   const emailCount = document.getElementById('emailCount');
 
   if (!emailList) return;
 
-  if (!emails || emails.length === 0) {
+  let html = '';
+  let totalCount = 0;
+
+  // Show found emails
+  if (emails && emails.length > 0) {
+    totalCount += emails.length;
+    html += emails.map(email => `
+      <li class="email-item">
+        <span style="flex: 1; word-break: break-all;">${escapeHtml(email)}</span>
+        <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin: 0 8px;">FOUND</span>
+        <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(email)}')">Copy</button>
+      </li>
+    `).join('');
+  }
+
+  // Show predicted email patterns
+  if (predictedEmails && predictedEmails.length > 0) {
+    html += '<li style="padding: 8px; background: #f8f9fa; margin: 8px 0; border-radius: 4px; font-weight: 600; font-size: 11px; color: #6c757d;">✨ PREDICTED PATTERNS</li>';
+
+    // Show top 5 predicted patterns
+    const topPredicted = predictedEmails.slice(0, 5);
+    html += topPredicted.map(item => `
+      <li class="email-item" style="background: #fff3cd;">
+        <span style="flex: 1; word-break: break-all; font-size: 12px;">${escapeHtml(item.email)}</span>
+        <span style="background: #ffc107; color: #000; padding: 2px 6px; border-radius: 3px; font-size: 9px; margin: 0 8px;">${item.confidence}%</span>
+        <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(item.email)}')" style="background: #ffc107; color: #000;">Copy</button>
+      </li>
+    `).join('');
+  }
+
+  if (html === '') {
     emailList.innerHTML = '<li class="empty-state"><div class="empty-state-text">No emails found</div></li>';
     if (emailCount) emailCount.textContent = '0';
     return;
   }
 
-  if (emailCount) emailCount.textContent = emails.length.toString();
-
-  emailList.innerHTML = emails.map(email => `
-    <li class="email-item">
-      <span>${escapeHtml(email)}</span>
-      <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(email)}')">Copy</button>
-    </li>
-  `).join('');
+  if (emailCount) emailCount.textContent = totalCount.toString();
+  emailList.innerHTML = html;
 }
 
 /**
@@ -831,6 +968,161 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+/**
+ * Generate email patterns based on name and company
+ */
+function generateEmailPatterns(fullName, company, domain) {
+  if (!fullName || !company) {
+    return [];
+  }
+
+  const nameParts = fullName.trim().split(/\s+/);
+  const firstName = nameParts[0]?.toLowerCase().replace(/[^a-z]/g, '') || '';
+  const lastName = nameParts[nameParts.length - 1]?.toLowerCase().replace(/[^a-z]/g, '') || '';
+  const firstInitial = firstName[0] || '';
+  const lastInitial = lastName[0] || '';
+
+  // Extract or guess company domain
+  let companyDomain = domain || extractCompanyDomain(company);
+
+  if (!companyDomain) {
+    return [];
+  }
+
+  const patterns = [];
+
+  // Generate common email patterns
+  if (firstName && lastName) {
+    patterns.push({
+      email: `${firstName}.${lastName}@${companyDomain}`,
+      pattern: 'first.last',
+      confidence: 95
+    });
+    patterns.push({
+      email: `${firstName}${lastName}@${companyDomain}`,
+      pattern: 'firstlast',
+      confidence: 85
+    });
+    patterns.push({
+      email: `${firstInitial}${lastName}@${companyDomain}`,
+      pattern: 'flast',
+      confidence: 80
+    });
+    patterns.push({
+      email: `${firstInitial}.${lastName}@${companyDomain}`,
+      pattern: 'f.last',
+      confidence: 75
+    });
+    patterns.push({
+      email: `${firstName}@${companyDomain}`,
+      pattern: 'first',
+      confidence: 70
+    });
+    patterns.push({
+      email: `${firstName}_${lastName}@${companyDomain}`,
+      pattern: 'first_last',
+      confidence: 65
+    });
+    patterns.push({
+      email: `${firstName}-${lastName}@${companyDomain}`,
+      pattern: 'first-last',
+      confidence: 60
+    });
+    patterns.push({
+      email: `${lastName}.${firstName}@${companyDomain}`,
+      pattern: 'last.first',
+      confidence: 55
+    });
+    patterns.push({
+      email: `${lastName}${firstInitial}@${companyDomain}`,
+      pattern: 'lastf',
+      confidence: 50
+    });
+  } else if (firstName) {
+    patterns.push({
+      email: `${firstName}@${companyDomain}`,
+      pattern: 'first',
+      confidence: 75
+    });
+  }
+
+  console.log(`📧 Generated ${patterns.length} email patterns for ${fullName} at ${companyDomain}`);
+  return patterns;
+}
+
+/**
+ * Extract company domain from company name or URL
+ */
+function extractCompanyDomain(company, url) {
+  if (!company) return null;
+
+  let domain = '';
+
+  // If company is a URL, extract domain
+  if (company.includes('http') || company.includes('www.')) {
+    try {
+      const urlObj = new URL(company.startsWith('http') ? company : `https://${company}`);
+      domain = urlObj.hostname.replace('www.', '');
+      return domain;
+    } catch (e) {
+      // Invalid URL
+    }
+  }
+
+  // Try to find company website from page URL
+  if (url && !url.includes('linkedin.com')) {
+    try {
+      const urlObj = new URL(url);
+      domain = urlObj.hostname.replace('www.', '');
+      // If it's a reasonable domain, use it
+      if (domain && !domain.includes('linkedin') && domain.includes('.')) {
+        return domain;
+      }
+    } catch (e) {
+      // Invalid URL
+    }
+  }
+
+  // Clean company name and create domain
+  const cleanCompany = company
+    .toLowerCase()
+    .replace(/\s*(inc|llc|ltd|limited|corporation|corp|company|co\.?)\.?\s*$/i, '')
+    .replace(/[^a-z0-9]/g, '')
+    .trim();
+
+  // Common company domain patterns
+  const commonTLDs = ['.com', '.io', '.net', '.org', '.co'];
+
+  // Return most likely domain
+  domain = `${cleanCompany}.com`;
+
+  console.log(`🌐 Extracted/guessed domain: ${domain} from company: ${company}`);
+  return domain;
+}
+
+/**
+ * Validate email format
+ */
+function validateEmail(email) {
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return emailRegex.test(email);
+}
+
+/**
+ * Get company info from domain
+ */
+async function getCompanyInfo(domain) {
+  // This would integrate with Clearbit, Hunter.io, or similar APIs
+  // For now, return mock data
+  return {
+    domain: domain,
+    name: domain.split('.')[0],
+    industry: 'Technology',
+    employeeCount: '50-200',
+    founded: null
+  };
 }
 
 // Initialize when DOM is ready
