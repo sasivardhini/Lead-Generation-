@@ -40,39 +40,100 @@ function extractLead() {
     console.log('Found name:', lead.name);
   }
 
-  // Get all divs with class containing "text-body-medium"
+  // Get headline - look for divs with text-body-medium
   const divs = document.querySelectorAll('div[class*="text-body-medium"]');
+  console.log(`Found ${divs.length} potential headline divs`);
+
   for (let div of divs) {
     const text = div.textContent.trim();
 
-    // Skip empty or very short text
-    if (!text || text.length < 5) continue;
+    // Skip empty, very short, or very long text
+    if (!text || text.length < 5 || text.length > 200) continue;
 
-    // If it contains "at", it's probably the headline
-    if (text.includes(' at ') && !lead.title) {
-      lead.title = text.split(' at ')[0].trim();
-      lead.company = text.split(' at ')[1].split('·')[0].trim();
-      console.log('Found title:', lead.title);
-      console.log('Found company:', lead.company);
+    // Skip pronouns
+    if (text.match(/^(He\/Him|She\/Her|They\/Them)$/i)) {
+      console.log('Skipping pronouns:', text);
+      continue;
+    }
+
+    // Skip if it's the name we already found
+    if (text === lead.name) continue;
+
+    console.log('Checking headline candidate:', text);
+
+    // If it contains "at", parse title and company
+    if (text.includes(' at ')) {
+      const parts = text.split(' at ');
+      lead.title = parts[0].trim();
+      lead.company = parts[1].split('·')[0].split('|')[0].trim();
+      console.log('Found title with company:', lead.title, 'at', lead.company);
+      break;
+    }
+    // If it contains " | ", might be formatted differently
+    else if (text.includes(' | ')) {
+      const parts = text.split(' | ');
+      lead.title = parts[0].trim();
+      lead.company = parts[1].trim();
+      console.log('Found title (pipe format):', lead.title);
+      break;
+    }
+    // Otherwise, just use it as title
+    else if (!lead.title) {
+      lead.title = text;
+      console.log('Found title (no company):', lead.title);
       break;
     }
   }
 
-  // Get location from any span with "text-body-small"
+  // Get location from spans with text-body-small
   const spans = document.querySelectorAll('span[class*="text-body-small"]');
+  console.log(`Found ${spans.length} potential location spans`);
+
   for (let span of spans) {
     const text = span.textContent.trim();
-    if (text.length > 3 && text.length < 100 && !text.match(/connection|follower|post/i)) {
+
+    // Skip empty or very short
+    if (!text || text.length < 3) continue;
+
+    // Skip pronouns
+    if (text.match(/^(He\/Him|She\/Her|They\/Them)$/i)) {
+      console.log('Skipping pronouns in span:', text);
+      continue;
+    }
+
+    // Skip common non-location text
+    if (text.match(/connection|follower|post|view|message|more/i)) {
+      console.log('Skipping non-location:', text);
+      continue;
+    }
+
+    // Good location should be reasonable length
+    if (text.length >= 3 && text.length < 100) {
       lead.location = text;
       console.log('Found location:', lead.location);
       break;
     }
   }
 
+  // Try to extract company from experience section if we don't have it
+  if (!lead.company) {
+    const experienceSection = document.querySelector('#experience');
+    if (experienceSection) {
+      const nextSection = experienceSection.parentElement;
+      const companySpans = nextSection.querySelectorAll('span[aria-hidden="true"]');
+      if (companySpans.length >= 2) {
+        lead.company = companySpans[1].textContent.trim().split('·')[0];
+        console.log('Found company from experience:', lead.company);
+      }
+    }
+  }
+
   // Generate email patterns
   if (lead.name && lead.company) {
     lead.predictedEmails = generateEmails(lead.name, lead.company);
-    console.log('Generated emails:', lead.predictedEmails.length);
+    console.log('Generated', lead.predictedEmails.length, 'emails');
+  } else {
+    console.log('Cannot generate emails - missing name or company');
   }
 
   return lead;
