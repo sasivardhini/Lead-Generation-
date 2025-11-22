@@ -539,8 +539,22 @@ function setupSidebarListeners() {
 async function extractPageData() {
   let data = {};
 
-  // Use professional LinkedIn extractor if available
-  if (extractor && window.location.hostname.includes('linkedin.com')) {
+  // Use simple extractor for LinkedIn profiles
+  if (window.location.hostname.includes('linkedin.com') && window.location.pathname.startsWith('/in/')) {
+    console.log('🎯 Using simple LinkedIn extractor...');
+
+    // Use the simple extractor function
+    if (typeof extractLinkedInProfileSimple !== 'undefined') {
+      data = extractLinkedInProfileSimple();
+    } else {
+      console.error('❌ Simple extractor not loaded!');
+      // Fallback to complex extractor
+      if (extractor && extractor.pageType === 'PROFILE') {
+        data = extractor.extractProfile();
+      }
+    }
+  } else if (extractor && window.location.hostname.includes('linkedin.com')) {
+    // Use complex extractor for other LinkedIn pages
     if (extractor.pageType === 'PROFILE') {
       data = extractor.extractProfile();
     } else if (extractor.pageType === 'COMPANY') {

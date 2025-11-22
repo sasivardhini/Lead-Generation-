@@ -31,6 +31,7 @@
     {
       "matches": ["<all_urls>"],
       "js": [
+        "simple-extractor.js",
         "linkedin-extractor.js",
         "overlay-widget.js",
         "content.js"
