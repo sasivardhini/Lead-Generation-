@@ -125,14 +125,22 @@ async function extractLeads() {
     // Get current tab
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
+    console.log('📍 Current tab:', tab);
+
     if (!tab) {
-      throw new Error('No active tab found');
+      throw new Error('No active tab found. Please make sure you have a tab open.');
+    }
+
+    if (!tab.url) {
+      console.warn('⚠️ Tab URL is undefined, but continuing...');
     }
 
     // Check if page is restricted
     if (isRestrictedPage(tab.url)) {
-      throw new Error('Cannot extract from this page. Extension doesn\'t work on Chrome system pages.');
+      throw new Error(`Cannot extract from this page: ${tab.url}\n\nExtension doesn't work on Chrome system pages (chrome://, chrome-extension://, etc.)\n\nPlease navigate to a website like LinkedIn and try again.`);
     }
+
+    console.log('✅ Proceeding with extraction on:', tab.url);
 
     // Try to inject content script if not already loaded
     try {
@@ -160,17 +168,36 @@ async function extractLeads() {
       await loadStats();
       await loadRecentLeads();
 
-      // Show success message
-      showNotification('Success!', `Extracted ${response.data.emails?.length || 0} emails`, 'success');
+      const extractedData = response.data || {};
+      const emailCount = extractedData.emails?.length || 0;
+      const predictedCount = extractedData.predictedEmails?.length || 0;
 
-      // Auto-open sidebar
-      await openSidebar();
+      // Show success message
+      if (emailCount > 0) {
+        showNotification('Success!', `Found ${emailCount} email(s)`, 'success');
+      } else if (predictedCount > 0) {
+        showNotification('Success!', `Generated ${predictedCount} predicted email patterns`, 'success');
+      } else {
+        showNotification('Extracted', `Profile data extracted. Check sidebar for details.`, 'success');
+      }
+
+      console.log('✅ Extraction successful:', extractedData);
     } else {
-      throw new Error(response?.error || 'Extraction failed');
+      throw new Error(response?.error || 'Extraction failed. Please check console for details.');
     }
   } catch (error) {
-    console.error('Error extracting leads:', error);
-    showNotification('Error', error.message, 'error');
+    console.error('❌ Error extracting leads:', error);
+
+    // Better error message for user
+    let userMessage = error.message;
+
+    if (error.message.includes('Receiving end does not exist')) {
+      userMessage = 'Content script not loaded. Please refresh the page (F5) and try again.';
+    } else if (error.message.includes('Cannot extract')) {
+      userMessage = error.message;
+    }
+
+    showNotification('Error', userMessage, 'error');
   } finally {
     // Restore button
     extractBtn.innerHTML = originalContent;
@@ -182,7 +209,13 @@ async function extractLeads() {
  * Check if page is restricted (cannot run content scripts)
  */
 function isRestrictedPage(url) {
-  if (!url) return true;
+  // If no URL, we can't determine - let's try anyway and let it fail later with better error
+  if (!url) {
+    console.warn('⚠️ Tab URL is undefined');
+    return false; // Changed from true - let's try to extract anyway
+  }
+
+  console.log('📍 Checking URL:', url);
 
   const restrictedProtocols = [
     'chrome://',
@@ -193,7 +226,15 @@ function isRestrictedPage(url) {
     'file://'
   ];
 
-  return restrictedProtocols.some(protocol => url.startsWith(protocol));
+  const isRestricted = restrictedProtocols.some(protocol => url.startsWith(protocol));
+
+  if (isRestricted) {
+    console.log('❌ Page is restricted:', url);
+  } else {
+    console.log('✅ Page is accessible:', url);
+  }
+
+  return isRestricted;
 }
 
 /**
