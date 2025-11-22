@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lead Generator Pro</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 380px;
+      min-height: 500px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 0;
+    }
+
+    .header {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 20px;
+      text-align: center;
+      color: white;
+    }
+
+    .logo {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .content {
+      background: white;
+      padding: 20px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 28px;
+      font-weight: 700;
+      color: #667eea;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #6c757d;
+      text-transform: uppercase;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+
+    .action-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+
+    .btn-secondary:hover {
+      background: #f8f9fa;
+    }
+
+    .btn-icon {
+      font-size: 18px;
+    }
+
+    .recent-leads {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 2px solid #e9ecef;
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #495057;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .lead-item {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      border-left: 3px solid #667eea;
+    }
+
+    .lead-name {
+      font-weight: 600;
+      color: #212529;
+      margin-bottom: 4px;
+    }
+
+    .lead-email {
+      color: #6c757d;
+      font-size: 11px;
+    }
+
+    .lead-meta {
+      color: #adb5bd;
+      font-size: 10px;
+      margin-top: 4px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 30px 20px;
+      color: #6c757d;
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+      opacity: 0.3;
+    }
+
+    .empty-text {
+      font-size: 13px;
+    }
+
+    .export-options {
+      display: flex;
+      gap: 8px;
+      margin-top: 15px;
+    }
+
+    .export-btn {
+      flex: 1;
+      padding: 10px;
+      background: white;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+
+    .export-btn:hover {
+      background: #f8f9fa;
+      border-color: #667eea;
+      color: #667eea;
+    }
+
+    .settings-link {
+      text-align: center;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #e9ecef;
+    }
+
+    .settings-link a {
+      color: #6c757d;
+      text-decoration: none;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .settings-link a:hover {
+      color: #667eea;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 600;
+      background: #28a745;
+      color: white;
+      margin-left: 8px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #6c757d;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .status-online {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #28a745;
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">🎯</div>
+    <div class="title">Lead Generator Pro</div>
+    <div class="subtitle">
+      <span class="status-online"></span>
+      Ready to extract leads
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Statistics -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number" id="totalLeads">0</div>
+        <div class="stat-label">Total Leads</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="todayLeads">0</div>
+        <div class="stat-label">Today</div>
+      </div>
+    </div>
+
+    <!-- Main Actions -->
+    <button class="action-btn btn-primary" id="extractBtn">
+      <span class="btn-icon">🔍</span>
+      Extract Leads from Page
+    </button>
+
+    <button class="action-btn btn-secondary" id="openSidebarBtn">
+      <span class="btn-icon">📊</span>
+      Open Sidebar
+    </button>
+
+    <!-- Export Options -->
+    <div class="export-options">
+      <button class="export-btn" id="exportCsvBtn">📊 CSV</button>
+      <button class="export-btn" id="exportJsonBtn">📄 JSON</button>
+      <button class="export-btn" id="exportVcardBtn">👤 vCard</button>
+    </div>
+
+    <!-- Recent Leads -->
+    <div class="recent-leads">
+      <div class="section-title">Recent Leads</div>
+      <div id="recentLeadsList">
+        <div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <div class="empty-text">No leads extracted yet</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="settings-link">
+      <a href="#" id="settingsLink">
+        ⚙️ Settings & API Configuration
+      </a>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

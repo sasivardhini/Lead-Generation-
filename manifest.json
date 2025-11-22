@@ -1,24 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "Advanced Lead Generator Pro",
-  "version": "1.0.0",
-  "description": "Professional lead generation tool - Extract emails, phone numbers, LinkedIn profiles, and enrich contact data from any webpage",
+  "name": "LinkedIn Lead Extractor",
+  "version": "3.0.0",
+  "description": "Simple LinkedIn profile extractor with email pattern generation",
+
   "permissions": [
     "activeTab",
-    "scripting",
     "storage",
-    "tabs",
-    "contextMenus",
-    "notifications",
     "downloads"
   ],
-  "host_permissions": [
-    "https://*/*",
-    "http://*/*"
-  ],
-  "background": {
-    "service_worker": "background.js"
-  },
+
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -27,23 +18,15 @@
       "128": "icons/icon128.png"
     }
   },
+
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": [
-        "linkedin-extractor.js",
-        "overlay-widget.js",
-        "content.js"
-      ],
+      "matches": ["https://www.linkedin.com/*"],
+      "js": ["extractor.js"],
       "run_at": "document_idle"
     }
   ],
-  "web_accessible_resources": [
-    {
-      "resources": ["sidebar.html", "sidebar.css", "icons/*"],
-      "matches": ["<all_urls>"]
-    }
-  ],
+
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",

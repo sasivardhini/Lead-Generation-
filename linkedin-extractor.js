@@ -39,6 +39,7 @@ class LinkedInExtractor {
    */
   extractProfile() {
     console.log('🎯 Extracting single LinkedIn profile...');
+    console.log('📍 Current URL:', window.location.href);
 
     const profile = {
       type: 'linkedin_profile',
@@ -64,6 +65,10 @@ class LinkedInExtractor {
       skills: []
     };
 
+    // Debug: Log all h1 elements
+    const allH1 = document.querySelectorAll('h1');
+    console.log(`Found ${allH1.length} h1 elements:`, Array.from(allH1).map(h => h.textContent.trim()));
+
     // Extract profile image
     const imgSelectors = [
       'img.pv-top-card-profile-picture__image',
@@ -78,33 +83,52 @@ class LinkedInExtractor {
       }
     }
 
-    // Extract name with multiple fallbacks
+    // Extract name with multiple fallbacks and extensive logging
     const nameSelectors = [
       'h1.text-heading-xlarge',
       '.pv-text-details__left-panel h1',
       'h1[class*="top-card"]',
       '.scaffold-layout__main h1',
-      'h1.inline.t-24.v-align-middle.break-words'
+      'h1.inline.t-24.v-align-middle.break-words',
+      'div.mt2 h1',
+      '.pv-top-card--list h1',
+      'section.artdeco-card h1',
+      // More generic fallbacks
+      'h1',
+      '[data-anonymize="person-name"]'
     ];
 
+    console.log('🔍 Trying to extract name...');
     for (const selector of nameSelectors) {
       const element = document.querySelector(selector);
+      console.log(`  Testing selector: ${selector}`, element ? `Found: "${element.textContent.trim().substring(0, 50)}"` : 'Not found');
+
       if (element && element.textContent.trim().length > 0 && element.textContent.trim().length < 100) {
         const fullName = element.textContent.trim();
-        profile.name = fullName;
 
-        // Parse first and last name
-        const nameParts = fullName.split(' ');
-        if (nameParts.length >= 2) {
-          profile.firstName = nameParts[0];
-          profile.lastName = nameParts[nameParts.length - 1];
-        } else {
-          profile.firstName = nameParts[0];
+        // Skip if it looks like a company name or other non-name text
+        const looksLikeName = !fullName.match(/^(LinkedIn|Profile|People|Connect)/i);
+
+        if (looksLikeName) {
+          profile.name = fullName;
+
+          // Parse first and last name
+          const nameParts = fullName.split(' ').filter(p => p.length > 0);
+          if (nameParts.length >= 2) {
+            profile.firstName = nameParts[0];
+            profile.lastName = nameParts[nameParts.length - 1];
+          } else {
+            profile.firstName = nameParts[0];
+          }
+
+          console.log(`✅ Found name with selector "${selector}": ${fullName}`);
+          break;
         }
-
-        console.log(`✓ Found name: ${fullName}`);
-        break;
       }
+    }
+
+    if (!profile.name) {
+      console.warn('❌ Could not extract name from profile');
     }
 
     // Extract headline/title
