@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "LinkedIn Lead Extractor",
-  "version": "3.0.0",
-  "description": "Simple LinkedIn profile extractor with email pattern generation",
+  "name": "Lead Generator Pro",
+  "version": "4.0.0",
+  "description": "Professional LinkedIn lead extraction with backend integration",
 
   "permissions": [
     "activeTab",
@@ -10,8 +10,13 @@
     "downloads"
   ],
 
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "http://localhost:5173/*"
+  ],
+
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "popup-new.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

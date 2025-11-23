@@ -224,11 +224,62 @@ function showCard(lead) {
 }
 
 function saveLead(lead) {
+  // Save to local storage first
   chrome.storage.local.get(['leads'], (result) => {
     const leads = result.leads || [];
     leads.push(lead);
     chrome.storage.local.set({ leads: leads }, () => {
-      console.log('✅ Saved lead to storage');
+      console.log('✅ Saved lead to local storage');
     });
   });
+
+  // Send to backend API
+  saveToBackend(lead);
+}
+
+async function saveToBackend(lead) {
+  try {
+    // Get auth token from storage
+    const { authToken } = await chrome.storage.local.get(['authToken']);
+
+    if (!authToken) {
+      console.log('⚠️ No auth token found. Lead saved locally only.');
+      return;
+    }
+
+    const API_URL = 'http://localhost:3000/api/v1';
+
+    // Transform lead data for API
+    const payload = {
+      firstName: lead.name ? lead.name.split(' ')[0] : null,
+      lastName: lead.name ? lead.name.split(' ').slice(1).join(' ') : null,
+      fullName: lead.name,
+      email: lead.predictedEmails?.[0] || null,
+      title: lead.title,
+      companyName: lead.company,
+      location: lead.location,
+      linkedinUrl: lead.url,
+      sourceUrl: lead.url,
+      sourceType: 'linkedin',
+    };
+
+    const response = await fetch(`${API_URL}/leads`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ Lead saved to backend:', data);
+    } else {
+      const error = await response.json();
+      console.error('❌ Failed to save to backend:', error);
+    }
+  } catch (error) {
+    console.error('❌ Error saving to backend:', error);
+  }
 }
